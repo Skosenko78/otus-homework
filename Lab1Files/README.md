@@ -21,7 +21,8 @@
 # **Установка ПО**
 
 ### **VirualBox**
-
+Обновляем репозиторий ```apt-get update```
+Устанавливаем VirtualBox ```apt-get install virtualbox```
 
 ### **Vagrant**
 Переходим на https://www.vagrantup.com/downloads.html выбираем соответствующую версию. В данном случае Debian 64-bit и версия 2.2.6. Копируем ссылку и в консоли выполняем:
