@@ -11,7 +11,7 @@
 - **Packer** - ПО для создания образов виртуальных машин;
 - **Git** - система контроля версий
 
-А так же аккаунты:
+Заводим аккаунты:
 
 - **GitHub** - https://github.com/
 - **Vagrant Cloud** - https://app.vagrantup.com
@@ -21,29 +21,34 @@
 # **Установка ПО**
 
 ### **VirualBox**
-Обновляем репозиторий ```apt-get update```
-Устанавливаем VirtualBox ```apt-get install virtualbox```
+В консоли выполняем 
+
+```
+apt-get update 
+apt-get install virtualbox
+```
 
 ### **Vagrant**
-Переходим на https://www.vagrantup.com/downloads.html выбираем соответствующую версию. В данном случае Debian 64-bit и версия 2.2.6. Копируем ссылку и в консоли выполняем:
+Переходим на https://www.vagrantup.com/downloads.html выбираем соответствующую версию. Копируем команды и в консоли выполняем:
 
 ```
-curl -O https://releases.hashicorp.com/vagrant/2.2.6/vagrant_2.2.6_x86_64.deb && \
-sudo dpkg -i vagrant_2.2.6_x86_64.deb
+url -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+sudo apt-get update && sudo apt-get install vagrant
 ```
-
-После успешного окончания будет установлен Vagrant.
 
 ### **Packer**
-Переходим на https://www.packer.io/downloads.html выбираем соответствующую версию. В данном случае Linux 64-bit и версия 1.4.4. Копируем ссылку и в консоли выполняем:
+Переходим на https://www.packer.io/downloads.html выбираем соответствующую версию. Ключи и репозиторий мы добавили в предыдущем шаге. Поэтому в консоли выполняем только:
 
 ```
-curl https://releases.hashicorp.com/packer/1.4.4/packer_1.4.4_linux_amd64.zip | \
-sudo gzip -d > /usr/local/bin/packer && \
-sudo chmod +x /usr/local/bin/packer
+sudo apt-get install packer
 ```
 
-После успешного окончания будет установлен Packer.
+### **Git**
+В консоли выполняем 
+
+```
+apt-get install git
 
 ---
 
@@ -51,24 +56,13 @@ sudo chmod +x /usr/local/bin/packer
 
 ### **Клонирование и запуск**
 
-Для запуска рабочего виртуального окружения необходимо зайти через браузер в GitHub под своей учетной записью и выполнить `fork` данного репозитория: https://github.com/dmitry-lyutenko/manual_kernel_update
+Заходим через браузер в GitHub со своей учетной записью и выполняем `fork` данного репозитория: https://github.com/dmitry-lyutenko/manual_kernel_update
 
-После этого данный репозиторий необходимо склонировать к себе на рабочую машину. Для этого воспользуемся ранее установленным приложением `git`, при этом в `<user_name>` будет имя уже вашего репозитрия:
+После этого клонируем данный репозиторий к себе на рабочую машину. Для этого используем команду
 ```
 git clone git@github.com:<user_name>/manual_kernel_update.git
 ```
-В текущей директории появится папка с именем репозитория. В данном случае `manual_kernel_update`. Ознакомимся с содержимым:
-```
-cd manual_kernel_update
-ls -1
-manual
-packer
-Vagrantfile
-```
-Здесь:
-- `manual` - директория с данным руководством
-- `packer` - директория со скриптами для `packer`'а
-- `Vagrantfile` - файл описывающий виртуальную инфраструктуру для `Vagrant`
+В текущей директории появилась папка с именем  `manual_kernel_update`.
 
 Запустим виртуальную машину и залогинимся:
 ```
