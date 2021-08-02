@@ -49,6 +49,7 @@ sudo apt-get install packer
 
 ```
 apt-get install git
+```
 
 ---
 
@@ -63,6 +64,21 @@ apt-get install git
 git clone git@github.com:<user_name>/manual_kernel_update.git
 ```
 В текущей директории появилась папка с именем  `manual_kernel_update`.
+
+Для удобства копируем файлы из директории `manual_kernel_update` в Lab1Files.
+Создаём пустой репозиторий Git, добавляем содержимое нужных файлов в индекс, подключаем удалённый репозиторий, копируем содержимое локального репозитория в удалённый: 
+
+```
+git init
+git add README.md
+git add Lab1Files/README.md
+git add Lab1Files/Vagrantfile
+git config --global user.email "kosenko_sergei@mail.ru"
+git config --global user.name "Sergey Kosenko"
+git commit -m "First commit" 
+git remote add origin https://github.com/Skosenko78/otus-homework.git
+git push -u origin master
+```
 
 Запустим виртуальную машину и залогинимся:
 ```
