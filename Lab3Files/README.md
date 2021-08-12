@@ -350,7 +350,7 @@ realtime =none                   extsz=4096   blocks=0, rtextents=0
 
 Добавим в fstab строчку для автоматического монтирования /home:
 
-`
+```
 [root@lvm ~]$ echo `sudo blkid  | grep Home: | awk '{print $2}'` /home xfs defaults 0 0 >> /etc/fstab
 [vagrant@lvm ~]$ lsblk 
 NAME                       MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
@@ -373,7 +373,7 @@ sdd                          8:48   0    1G  0 disk
 └─vg_var-lv_var_rimage_1   253:6    0  952M  0 lvm  
   └─vg_var-lv_var          253:7    0  952M  0 lvm  /var
 sde                          8:64   0    1G  0 disk
-`
+```
 
 # **/home - сделать том для снапшотов**
 
