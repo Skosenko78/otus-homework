@@ -205,7 +205,8 @@ dracut module 'dmraid' will not be installed, because command 'dmraid' could not
 
 ### **Выделить том под /var в зеркало**
 
-[root@lvm boot]# lsblk 
+```
+[root@lvm boot]# lsblk
 NAME                    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 sda                       8:0    0   40G  0 disk 
 ├─sda1                    8:1    0    1M  0 part 
@@ -218,6 +219,7 @@ sdb                       8:16   0   10G  0 disk
 sdc                       8:32   0    2G  0 disk 
 sdd                       8:48   0    1G  0 disk 
 sde                       8:64   0    1G  0 disk
+```
 
 На дисках sdc и sdd создадим зеркало:
 
