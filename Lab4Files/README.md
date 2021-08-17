@@ -27,7 +27,7 @@ sdg      8:96   0   1G  0 disk
 Создадим zfs pool. Для этого выполним:
 
 ```
-vagrant@server ~]$ sudo zpool create bigdata /dev/sd[b-g]
+[vagrant@server ~]$ sudo zpool create bigdata /dev/sd[b-g]
 ```
 
 Проверим:
@@ -64,7 +64,7 @@ bigdata  5.62G    96K  5.62G        -         -     0%     0%  1.00x    ONLINE  
 [vagrant@server ~]$ sudo zfs create bigdata/zfs_zle
 ```
 
-### **Изменение настроеек файловых систем**
+### **Изменение настроек файловых систем**
 
 Доступные значения для установки сжатия данных:
 
@@ -81,6 +81,7 @@ compression=on|off|gzip|gzip-N|lz4|lzjb|zle
 ```
 Проверим изменение настроек:
 
+```
 [vagrant@server ~]$ zfs get compression
 NAME              PROPERTY     VALUE     SOURCE
 bigdata           compression  off       default
@@ -88,6 +89,7 @@ bigdata/zfs_gzip  compression  gzip      local
 bigdata/zfs_lz4   compression  lz4       local
 bigdata/zfs_lzjb  compression  lzjb      local
 bigdata/zfs_zle   compression  zle       local
+```
 
 ### **Проверка эффективности сжатия**
 
@@ -96,7 +98,7 @@ bigdata/zfs_zle   compression  zle       local
 ```
 [vagrant@server ~]$ sudo wget -O War_and_Peace.txt https://www.gutenberg.org/files/2600/2600-0.txt -P /bigdata/zfs_gzip/
 ...
-vagrant@server ~]$ sudo wget -O War_and_Peace.txt https://www.gutenberg.org/files/2600/2600-0.txt -P /bigdata/lz4/
+[vagrant@server ~]$ sudo wget -O War_and_Peace.txt https://www.gutenberg.org/files/2600/2600-0.txt -P /bigdata/lz4/
 ...
 [vagrant@server ~]$ sudo wget -O War_and_Peace.txt https://www.gutenberg.org/files/2600/2600-0.txt -P /bigdata/zfs_lzjb/
 ...
@@ -133,7 +135,7 @@ bigdata/zfs_zle   compressratio  1.00x     -
 Из листинга видно, что для разных систем установлены разные алгоритмы сжатия, но в данном случае сложно сказать какой алгоритм эффективней, т.к. compressratio у всех равен 1.00x
 
 
-# ** Определить настройки pool’a**
+# **Определить настройки pool’a**
 
 Проверим функцию переноса дисков между системами. 
 
@@ -143,6 +145,7 @@ bigdata/zfs_zle   compressratio  1.00x     -
 
 ```
 wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1KRBNW33QWqbvbVHa3hLJivOAt60yukkg' -O zfs_task1.tar.gz
+
 tar -xf zfs_task1.tar.gz
 ```
 
@@ -219,7 +222,7 @@ otus/hometask2  checksum     sha256     inherited from otus
 
 ### **Скопировать файл**
 
-Скопируем файл с snapshot из удаленной директории:
+Скопируем файл с snapshot'ом из удаленной директории:
 
 ```
 wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1gH8gCL9y7Nd5Ti3IRmplZPF1XjzxeRAG' -O otus_task2.file
@@ -253,4 +256,4 @@ https://github.com/sindresorhus/awesome
 
 ### **Заключение**
 
-В процессе выполнения лабораторной работы были получены навыки работы с файловой системой zfs. Проверены функции импорта пулов и восстановления из snapshot'ов.
+В процессе выполнения лабораторной работы были получены навыки работы с файловой системой zfs. Были созданы тома, проверены функции импорта пулов и восстановления из snapshot'ов.
