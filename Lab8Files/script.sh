@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+LC_TIME=en_US.utf8
+
 MAILTO='rep_rcpt@domain.ru'
 LOGFILE='access-4560-644067.log'
-TMPFILE='/tmp/mailreport.txt'
+TMPFILE='mailreport.txt'
 CURRENTDATE='14 Aug 2019 05:00 +0300'
 REPORTDT="$(date -d "$CURRENTDATE" '+%d/%b/%G:%H')"
 
