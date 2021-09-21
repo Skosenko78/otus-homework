@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-LC_TIME=en_US.utf8
+export LC_TIME=en_US.utf8
+export TZ=Europe/Moscow
 
 MAILTO='rep_rcpt@domain.ru'
 LOGFILE='access-4560-644067.log'
@@ -29,6 +30,6 @@ grep $REPORTDT $LOGFILE | grep -oE '[A-Z][A-Z]+ /.* HTTP/1.1' | sort | uniq -c |
 echo "All RETURN codes:" >> $TMPFILE
 grep $REPORTDT $LOGFILE | grep -oE ' [1-5][0-9]{2} ' | sort | uniq -c |  awk 'BEGIN {print "Count    ReturnCode"} {print $1 "\t" $2}' >> $TMPFILE
 echo "Error entries:" >> $TMPFILE
-grep $REPORTDT $LOGFILE | grep -E ' [3-5][0-9]{2} ' | sort +4 >> $TMPFILE
+grep $REPORTDT $LOGFILE | grep -E ' [3-5][0-9]{2} ' | sort -k +4 >> $TMPFILE
 mail -s Report $MAILTO < $TMPFILE
 exit 0
