@@ -12,7 +12,6 @@ do
 		seconds=$(bc <<< "scale=2;(${r_array[0]}-${a_stat[21]})/$c_ticks")
 		Res[1]=$id
 		Res[2]=$(readlink /proc/$id/fd/0)
-		# echo ${Res[2]} $?
 		if [ $? -eq 0 ]; then
 			if [[ ${Res[2]} == *tty* ]] || [[ ${Res[2]} == *pts/* ]]
 			then
@@ -24,10 +23,7 @@ do
 			Res[2]='?'
 		fi
 		Res[3]=$(cat /proc/$id/status | grep State | awk -F: '{print $2}' | sed  's/^[[:space:]]*//')
-		#echo "($t_time/$c_ticks)/$seconds"
 		Res[4]=$(bc <<< "scale=2; 100*($t_time/$c_ticks)/$seconds")
-		#echo ${Res[4]}
-		#exit 0
 		Res[5]=$(tr '\0' ' ' < /proc/$id/cmdline)
 		if [ "${Res[5]}" = '' ]; then
 			Res[5]="[$(cat /proc/$id/comm)]"
