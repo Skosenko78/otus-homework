@@ -1,0 +1,2 @@
+nginx_conf_dst: "/etc/nginx/nginx.conf"
+nginx_port: 8080

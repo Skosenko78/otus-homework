@@ -1,0 +1,43 @@
+---
+- name: "Web provision"
+  hosts: web
+  gather_facts: true
+  become: true
+
+  handlers:
+    - name: Nginx reload
+      service: 
+        name: nginx
+        state: reloaded
+
+  tasks:
+    - name: SELinux disable
+      selinux:
+        state: disabled
+
+    - name: Install Epel repo
+      yum:
+        name: epel-release
+        state: present
+      when: ansible_distribution_major_version | int < 8
+
+    - name: Install Nginx package
+      yum:
+        name: nginx
+        state: present
+
+    - name: Create nginx config from template
+      template:
+        src: templates/default.conf.j2
+        dest: "{{ nginx_conf_dst }}"
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Enable Nginx service
+      systemd:
+        name: nginx
+        enabled: yes
+      notify: Nginx reload
+      
+...

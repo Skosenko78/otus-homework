@@ -1,0 +1,15 @@
+all:
+  children:
+    web:
+  vars:
+    ansible_user: 'vagrant'
+    
+web:
+  hosts:
+    main-nginx:
+      ansible_host: 10.0.0.41
+      ansible_ssh_private_key_file: ".vagrant/machines/main-nginx/virtualbox/private_key"
+    backup-nginx:
+      ansible_host: 10.0.0.42
+      ansible_ssh_private_key_file: ".vagrant/machines/backup-nginx/virtualbox/private_key"
+      nginx_port: 8081
