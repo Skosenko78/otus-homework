@@ -33,6 +33,7 @@
         owner: root
         group: root
         mode: 0644
+      notify: Nginx reload
 
     - name: Enable Nginx service
       systemd:
