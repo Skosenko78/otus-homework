@@ -1,0 +1,10 @@
+[Unit]
+Description=Regular task for Monitor script
+
+[Timer]
+OnCalendar=*-*-* *:*:0/30
+AccuracySec=1us
+Unit=catcher.service
+
+[Install]
+WantedBy=timers.target

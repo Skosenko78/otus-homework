@@ -1,0 +1,10 @@
+[Unit]
+Description=Spawn FastCGI scripts to be used by web servers
+After=network.target syslog.target remote_fs.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/spawn-fcgi
+ExecStart=/usr/bin/spawn-fcgi $OPTIONS
+
+[Install]
+WantedBy=default.target

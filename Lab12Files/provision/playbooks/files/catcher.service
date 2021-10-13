@@ -1,0 +1,9 @@
+[Unit]
+Description=Monitor script
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/catcher.bash
+
+[Install]
+WantedBy=default.target

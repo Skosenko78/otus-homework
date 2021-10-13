@@ -1,0 +1,106 @@
+---
+- name: Monitor service installation
+  hosts: SSystemd
+  gather_facts: false
+  become: true
+
+  handlers:
+    - name: Catcher enable and reload
+      systemd: 
+        name: catcher
+        daemon_reload: yes
+        enabled: yes
+        state: reloaded
+    - name: Catcher timer enable and start
+      systemd:
+        name: catcher.timer
+        enabled: yes
+        state: started
+
+  tasks:
+
+    - name: Copy service file
+      copy:
+        src: "catcher.bash"
+        dest: "/usr/bin/catcher.bash"
+        mode: 755
+    
+    - name: Copy files
+      copy:
+        src: "{{ item.name }}"
+        dest: "{{ item.path }}"
+      loop:
+        - { name: 'catcher', path: '/etc/sysconfig/catcher' }
+        - { name: 'catcher.service', path: '/etc/systemd/system/catcher.service'}
+        - { name: 'catcher.timer', path: '/etc/systemd/system/catcher.timer'}
+      notify:
+        - Catcher enable and reload
+        - Catcher timer enable and start
+
+- name: Spawn-fcgi and httpd tuning
+  hosts: SSystemd
+  gather_facts: false
+  become: true
+
+  handlers:
+
+    - name: Apache and Spawn-fcgi services start
+      systemd:
+        name: "{{ item }}"
+        daemon_reload: yes
+        enabled: yes
+        state: started
+      loop:
+        - httpd@http80
+        - httpd@http8080
+        - spawn-fcgi
+
+  tasks:
+
+    - name: Epel install
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Spawn-fcgi and Apache install
+      yum:
+        name: spawn-fcgi, httpd, php-cgi
+        state: latest
+    
+    - name: Spawn-fcgi service file copy
+      copy:
+        src: "spawn-fcgi.service"
+        dest: "/etc/systemd/system/spawn-fcgi.service"
+      notify: Apache and Spawn-fcgi services start
+
+    - name: Spawn-fcgi options
+      replace:
+        path: /etc/sysconfig/spawn-fcgi
+        regexp: '^#({{item}}.*)'
+        replace: '\1'
+      loop:
+          - 'OPTIONS'
+          - 'SOCKET'
+
+    - name: Apache service template file
+      copy:
+        src: 'httpd@.service'
+        dest: '/etc/systemd/system/httpd@.service'
+
+    - name: Create Apache port 80 config
+      template:
+        src: templates/http.conf
+        dest: "/etc/httpd/conf/http{{httpd_port}}.conf"
+      vars:
+        httpd_port: 80
+      notify: Apache and Spawn-fcgi services start
+      
+    - name: Create Apache port 8080 config
+      template:
+        src: templates/http.conf
+        dest: "/etc/httpd/conf/http{{httpd_port}}.conf"
+      vars:
+        httpd_port: 8080
+      notify: Apache and Spawn-fcgi services start
+        
+...
