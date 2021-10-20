@@ -1,0 +1,27 @@
+---
+- name: "Nginx installation and provision"
+  hosts: web
+  gather_facts: false
+  become: true
+
+  tasks:
+
+    - name: Install Epel repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Install Nginx and SE debug packages
+      yum:
+        name: nginx,policycoreutils-python,setroubleshoot-server
+        state: present
+
+    - name: Create nginx config from template
+      template:
+        src: templates/default.conf.j2
+        dest: "{{ nginx_conf_dst }}"
+        owner: root
+        group: root
+        mode: 0644
+      
+...
