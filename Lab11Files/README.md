@@ -144,4 +144,65 @@ Oct 20 13:38:06 CustomNGPort systemd[1]: Started The nginx HTTP and reverse prox
 
 Сервис запускается.
 
-## **2. Диагностика работы приложения при включённом SELinux
+## **2. Диагностика работы приложения при включённом SELinux.**
+
+При попытке удаленно (с рабочей станции) внести изменения в зону ddns.lab возникает ошибка `update failed: SERVFAIL` Появляется она по причине того, что процесс named на сервере работает в контексте безопасности named_t:
+
+```
+root@ns01 named]# ps -Z 715
+LABEL                             PID TTY      STAT   TIME COMMAND
+system_u:system_r:named_t:s0      715 ?        Ssl    0:00 /usr/sbin/named -u named -c /etc/named.conf
+```
+
+А каталог dynamic, в котором создаётся файл named.ddns.lab.view1.jnl находится в контексте безопасности etc_t:
+
+```
+[root@ns01 named]# ls -Z
+drw-rwx---. root named unconfined_u:object_r:etc_t:s0   dynamic
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.50.168.192.rev
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.dns.lab
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.dns.lab.view1
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.newdns.lab
+```
+
+Решения:
+
+1. Отключить SELinux.
+2. Изменить контекст безопасности каталога dynamic
+3. Сгенерировать модуль SELinux
+
+Отключение не подходит, т.к. сервер должен быть защищён.Генерирование модуля даёт доступ процессу  named ко всем файлам сервера, у которых контекст безопасности etc_t, а он является базовым. Остановимся на изменении контекста безопасности только для конкретного каталога (вариант 2).
+
+```
+root@ns01 vagrant]# semanage fcontext -a -t named_zone_t '/etc/named/dynamic(/.*)?'
+root@ns01 vagrant]# restorecon -v /etc/named/dynamic
+```
+
+После этого изменения в зону DNS с рабочей станции внеслись успешно:
+
+```
+[vagrant@client ~]$ nsupdate -k /etc/named.zonetransfer.key
+> server 192.168.50.10
+> zone ddns.lab
+> update add www.ddns.lab. 60 A 192.168.50.15
+> send
+update failed: SERVFAIL
+> server 192.168.50.10
+> zone ddns.lab
+> update add www.ddns.lab. 60 A 192.168.50.15
+> send
+> quit
+```
+
+В файл настройки стенда внесены изменения. Добавлены действия по настройке сервера:
+
+```
+- name: Set selinux policy for dynamic dir
+    sefcontext:
+      target: '/etc/named/dynamic(/.*)?'
+      setype: "named_zone_t"
+      state: present
+
+- name: Run restore context to reload selinux
+    shell: restorecon -R -v /etc/named/dynamic
+```
