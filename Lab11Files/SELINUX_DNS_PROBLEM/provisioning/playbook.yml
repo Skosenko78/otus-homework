@@ -98,14 +98,14 @@
       group: named
       mode: 0670
 
-  - name: Set selinux policy for dynamic dir
-    sefcontext:
-      target: '/etc/named/dynamic(/.*)?'
-      setype: "named_zone_t"
-      state: present
+ # - name: Set selinux policy for dynamic dir
+ #   sefcontext:
+ #     target: '/etc/named/dynamic(/.*)?'
+ #     setype: "named_zone_t"
+ #     state: present
 
-  - name: Run restore context to reload selinux
-    shell: restorecon -R -v /etc/named/dynamic 
+ # - name: Run restore context to reload selinux
+ #   shell: restorecon -R -v /etc/named/dynamic 
 
   - name: ensure named is running and enabled
     systemd:

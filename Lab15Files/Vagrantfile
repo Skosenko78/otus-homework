@@ -1,0 +1,22 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "PAM" do |vmconfig| 
+   vmconfig.vm.box = 'centos/7.8'
+   vmconfig.vm.hostname = 'PAM'
+   vmconfig.vm.network :private_network, ip: "10.0.0.41"
+   vmconfig.vm.provider "virtualbox" do |vbx|
+    vbx.memory = "1024"
+    vbx.cpus = "1"
+    vbx.customize ["modifyvm", :id, '--audio', 'none']
+   end
+  end
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "provision/playbooks/provision.yml"
+    ansible.inventory_path = "provision/inventories/all.yml"
+  end 
+
+end

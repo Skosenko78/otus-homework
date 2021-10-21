@@ -1,0 +1,13 @@
+---
+- name: Users adding
+  hosts: PAM
+  gather_facts: false
+  become: true
+
+  
+
+  tasks:
+
+    
+        
+...
