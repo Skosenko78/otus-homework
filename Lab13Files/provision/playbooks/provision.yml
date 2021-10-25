@@ -1,0 +1,39 @@
+---
+- name: Docker install
+  hosts: Docker
+  gather_facts: false
+  become: true
+
+  
+
+  tasks:
+
+  - name: Add docker repo
+    get_url:
+      url: https://download.docker.com/linux/centos/docker-ce.repo
+      dest: /etc/yum.repos.d/docker-ce.repo
+        
+  - name: Install docker packages
+    yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+  
+  - name: Docker service start
+    service:
+      name: docker
+      enabled: yes
+      state: started
+
+  - name: Copy files
+    copy:
+      src: "{{ item.name }}"
+      dest: "/home/vagrant/"
+    loop:
+      - name: "default.conf"
+      - name: "Dockerfile"
+      - name: "index.html"
+...
