@@ -25,8 +25,10 @@ http://10.0.0.41:8080
 
 Страница доступна:
 
+```
 Welcome to AlpineOS
 Hello from custom Docker container!
+```
 
 Кастомный образ размещён на docker хабе и доступен по ссылке: 
 
