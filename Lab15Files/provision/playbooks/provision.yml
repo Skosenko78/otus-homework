@@ -1,13 +1,76 @@
 ---
-- name: Users adding
+- name: Soft install
   hosts: PAM
   gather_facts: false
   become: true
 
-  
+  tasks:
+
+    - name: Epel install
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Add docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        
+    - name: Install packages
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - nmap-ncat
+          - pam_script
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+
+- name: Users adding and scripts coping
+  hosts: PAM
+  gather_facts: false
+  become: true
+
+  handlers:
+
+    - name: sshd_restart
+      systemd:
+        name: 'sshd'
+        state: restarted
 
   tasks:
 
+    - name: Users creation
+      user:
+        name: '{{ item.name }}'
+        update_password: on_create
+        password: "{{ 'Otus2021' | password_hash('md5') }}"
+      loop:
+        - name: 'day'
+        - name: 'night'
+        - name: 'friday'
+
+    - name: Copy files
+      copy:
+        src: "test_login.sh"
+        dest: "/usr/local/bin/"
+        mode: '755'
+
+    - name: SSHD remove line from config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'PasswordAuthentication no'
+        state: absent
     
+    - name: SSHD add line in config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#PasswordAuthentication yes'
+        line: 'PasswordAuthentication yes'
+      notify: sshd_restart
         
+    - name: SELinux disable
+      selinux:
+        state: disabled
 ...

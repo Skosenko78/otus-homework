@@ -36,4 +36,11 @@
       - name: "default.conf"
       - name: "Dockerfile"
       - name: "index.html"
+
+  - name: Add docker-compose
+    get_url:
+      url: https://github.com/docker/compose/releases/tag/v2.0.1/docker-compose-linux-x86_64
+      dest: /usr/local/bin/docker-compose
+      mode: '+x'
+
 ...
