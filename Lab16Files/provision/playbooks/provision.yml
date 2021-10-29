@@ -1,0 +1,62 @@
+---
+- name: "Web provision"
+  hosts: Web
+  gather_facts: false
+  become: true
+
+  handlers:
+    - name: Nginx reload
+      service: 
+        name: nginx
+        enabled: yes
+        state: started
+
+  tasks:
+    - name: SELinux disable
+      selinux:
+        state: disabled
+
+    - name: Install Epel repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Install Nginx package
+      yum:
+        name: nginx
+        state: latest
+      notify: Nginx reload
+
+- name: "Log provision"
+  hosts: Log
+  gather_facts: false
+  become: true
+
+  handlers:
+    - name: systemd-journal-remote
+      service:
+        name: systemd-journal-remote
+        state: started
+
+  tasks:
+    - name: SELinux disable
+      selinux:
+        state: disabled
+
+    - name: Install Epel repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Install journald remote service
+      yum:
+        name: systemd-journal-gateway
+        state: present
+    
+    - name: Create folder for remote logs
+      file:
+        path: /var/log/journal/remote
+        state: directory
+        owner: systemd-journal-remote
+        group: systemd-journal-remote
+...
