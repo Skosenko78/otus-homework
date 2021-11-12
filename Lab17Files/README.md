@@ -8,7 +8,7 @@
 
 ## 1. Backup папки /etc на сервере client
 
-После старта стенда на сервере создаётся репозитроий ClientRepo (скрипт borgrepini.sh), а на client по таймеру systemd запускается backup папки /etc каждые 5 минут. Ниже приведена часть лога (/var/log/messages) с сервера client за 30 минут работы сервера:
+После старта стенда на сервере создаётся репозитроий ClientRepo (скрипт borgrepini.sh), а на client по таймеру systemd запускается backup папки /etc каждые 5 минут. Ниже приведена часть лога (/var/log/messages) с сервера client за 30 минут работы:
 
 ```
 Nov 12 07:38:12 localhost systemd: Started Regular task for backups creation script.
@@ -63,7 +63,7 @@ Nov 12 08:10:09 localhost BorgBackup: terminating with success status, rc 0
 [vagrant@Client ~]$ sudo systemctl stop backupborg.timer
 ```
 
-Скопируем репозитроий на локальный сервер, т.к. после удаления папки /etc подключиться по ssh к серверу backup_server не получится:
+Скопируем репозиторий на локальный сервер, т.к. после удаления папки /etc подключиться по ssh к серверу backup_server не получится:
 
 ```
 [vagrant@Client ~]$ scp -r vagrant@10.0.0.41:/var/backup/ClientRepo ClientRepo
@@ -83,10 +83,10 @@ rm: cannot remove ‘etc’: Device or resource busy
 Видно, что каталог /etc пуст. Восстановим его из нашего репозитория. Из лога можно увидеть, что последний (и единственный в нашем случае) созданный backup в репозитории называется '20211112_081000'. Укажем его в команде восстановления:
 
 ```
-root@Client /]# borg extract /home/vagrant/ClientRepo::20211112_081000
+[root@Client /]# borg extract /home/vagrant/ClientRepo::20211112_081000
 Enter passphrase for key /home/vagrant/ClientRepo:
 ```
-После указания пароля 'SecretKey' от репозитория  команда успешно отработала и данные в каталоге /etc восстановились:
+После указания пароля 'SecretKey' от репозитория, команда успешно отработала и данные в каталоге /etc восстановились:
 
 ```
 [root@Client /]# ls /etc
