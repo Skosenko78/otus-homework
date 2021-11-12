@@ -1,0 +1,10 @@
+[Unit]
+Description=Regular task for backups creation script
+
+[Timer]
+OnCalendar=*-*-* *:0/5:0
+AccuracySec=1us
+Unit=backupborg.service
+
+[Install]
+WantedBy=timers.target

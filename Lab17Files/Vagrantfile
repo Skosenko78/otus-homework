@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "backup_server" do |vmconfig| 
+   vmconfig.vm.box = 'centos/7'
+   vmconfig.vm.hostname = 'BackupServer'
+   vmconfig.vm.network :private_network, ip: "10.0.0.41"
+   vmconfig.vm.provider "virtualbox" do |vbx|
+    vbx.memory = "1024"
+    vbx.cpus = "1"
+    vbx.customize ["modifyvm", :id, '--audio', 'none']
+    backup_disk = "/tmp/sata1.vdi"
+      unless File.exist?(backup_disk)
+        vbx.customize ['createhd', '--filename', backup_disk, '--variant', 'Fixed', '--size', 2048]
+            needsController =  true
+      end
+      if needsController == true
+          vbx.customize ["storagectl", :id, "--name", "SATA", "--add", "sata" ]
+          vbx.customize ['storageattach', :id, '--storagectl', 'SATA', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', backup_disk]
+      end
+   end
+   vmconfig.vm.provision "shell",
+    name: "Borg Repo Initialize",
+    path: "borgrepoini.sh"
+  end
+
+  config.vm.define "client" do |vmconfig| 
+    vmconfig.vm.box = 'centos/7'
+    vmconfig.vm.hostname = 'Client'
+    vmconfig.vm.network :private_network, ip: "10.0.0.42"
+    vmconfig.vm.provider "virtualbox" do |vbx|
+     vbx.memory = "1024"
+     vbx.cpus = "1"
+     vbx.customize ["modifyvm", :id, '--audio', 'none']
+    end
+   end
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "provision/playbooks/provision.yml"
+    ansible.inventory_path = "provision/inventories/all.yml"
+  end 
+
+end

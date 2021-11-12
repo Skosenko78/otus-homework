@@ -1,0 +1,124 @@
+---
+- name: "Server provision"
+  hosts: backup_server
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: SELinux disable
+      selinux:
+        state: disabled
+
+    - name: Install Epel repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Install LVM utils and Borgbackup
+      yum:
+        name: lvm2, device-mapper, borgbackup
+        state: present
+
+    - name: Create VG vg_backup
+      lvg:
+        vg: vg_backup
+        pvs: /dev/sdb
+
+    - name: Create LVM backup
+      lvol:
+        vg: vg_backup
+        lv: backup
+        size: 100%FREE
+        shrink: no
+    
+    - name: Create filesytem on LVM volume
+      filesystem:
+        dev: /dev/vg_backup/backup
+        fstype: ext4
+
+    - name: Mount LVM filesystem
+      mount:
+        path: /var/backup
+        src: /dev/vg_backup/backup
+        fstype: ext4
+        state: mounted
+    
+    - name: Change /var/backup folder owner
+      file:
+        path: /var/backup
+        owner: 'vagrant'
+        group: 'vagrant'
+        state: directory
+
+    - name: Add authorized_keys
+      lineinfile:
+        path: '/home/vagrant/.ssh/authorized_keys'
+        line: 'command="borg serve --restrict-to-path /var/backup/ClientRepo",restrict ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0iQMMSnc+0qwjjwL0Q8rNhK7x+FgrhjBDeVI1AXNRzmyQZO+c7YOSDEgqdI512miqrbZ3/jf0a8K8E0BlWdsaVgP+eWer5fEkEpOegBjTEMW1+9LIrhym1Hum+iaCagrNQbq3d9GG7x86W+iBcNCvSQLEW9IyVJGOqPlD2MyQcre8FUkeOz1lzW4nRPKpXX9AzQmRuICDPe9S1LCkBsr7s/R3brnTr55tdvsU0nidZwoUUamwsEVlYYA3jjszt9k4tzBctyYzHEqcaqkPLABuRaGFTTFgpWvqIqzwe89c15lAaBy896JjCYZjUYi3wnGZO3CVCh9nO2IwKBWD6AOf vagrant@Client'
+
+- name: "Client provision"
+  hosts: client
+  gather_facts: false
+  become: true
+
+  handlers:
+    - name: Backupborg timer enable and start
+      systemd:
+        name: backupborg.timer
+        daemon_reload: yes
+        enabled: yes
+        state: started
+
+  tasks:
+    - name: SELinux disable
+      selinux:
+        state: disabled
+
+    - name: Install Epel repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Install Borgbackup
+      yum:
+        name: borgbackup
+        state: latest
+
+    - name: Change SSH client settings
+      lineinfile:
+        path: '/etc/ssh/ssh_config'
+        regexp: '^StrictHostKeyChecking'
+        line: 'StrictHostKeyChecking no'
+        insertafter: '^# +StrictHostKeyChecking ask'
+
+    - name: Copy Borgbackup script
+      copy:
+        src: 'borgbackup.sh'
+        dest: '/usr/bin/borgbackup.sh'
+        mode: '754'
+    
+    - name: Copy backup service files
+      copy:
+        src: "{{ item.name }}"
+        dest: "{{ item.path }}"
+      loop:
+        - { name: 'backupborg.service', path: '/etc/systemd/system/backupborg.service' }
+        - { name: 'backupborg.timer', path: '/etc/systemd/system/backupborg.timer'}
+      notify:
+        - Backupborg timer enable and start
+    
+    - name: Create directory for SSH keys
+      file:
+        path: '/root/.ssh'
+        state: directory
+    
+    - name: Copy SSH client public key
+      copy:
+        src: 'id_rsa.pub'
+        dest: '/root/.ssh/id_rsa.pub'
+
+    - name: Copy SSH client private key
+      copy:  
+        src: 'id_rsa'
+        dest: '/root/.ssh/id_rsa'
+        mode: '600'
+...

@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup creation script
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/borgbackup.sh
+
+[Install]
+WantedBy=default.target

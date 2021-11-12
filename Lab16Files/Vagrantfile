@@ -4,7 +4,7 @@
 Vagrant.configure("2") do |config|
 
   config.vm.define "Web" do |vmconfig| 
-   vmconfig.vm.box = 'centos/7.8'
+   vmconfig.vm.box = 'centos/8'
    vmconfig.vm.hostname = 'Web'
    vmconfig.vm.network :private_network, ip: "10.0.0.41"
    vmconfig.vm.provider "virtualbox" do |vbx|
@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "Log" do |vmconfig| 
-    vmconfig.vm.box = 'centos/7.8'
+    vmconfig.vm.box = 'centos/8'
     vmconfig.vm.hostname = 'Log'
     vmconfig.vm.network :private_network, ip: "10.0.0.42"
     vmconfig.vm.provider "virtualbox" do |vbx|
