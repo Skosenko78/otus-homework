@@ -6,20 +6,47 @@
 
   handlers:
     - name: Nginx reload
-      service: 
+      systemd: 
         name: nginx
         enabled: yes
         state: started
+    
+    - name: Audit reload rules
+      command: /usr/sbin/service auditd restart     
+    
+    - name: Restart rsyslog
+      systemd:
+        name: rsyslog
+        state: restarted
+    
+    - name: Start filebeat
+      systemd:
+        name: filebeat
+        enabled: yes
+        state: restarted
 
   tasks:
     - name: SELinux disable
       selinux:
         state: disabled
 
-    - name: Install Epel repo
+    - name: Create repo file for Elasticsearch
+      copy:
+        dest: '/etc/yum.repos.d/'
+        src: 'elastic.repo'
+
+    - name: Install Epel repo and filebeat
       yum:
-        name: epel-release
+        name:
+          - epel-release
+          - filebeat
         state: latest
+
+    - name: Copy filebeat config
+      copy:
+        dest: '/etc/filebeat/'
+        src: 'filebeat.yml'
+      notify: Start filebeat
 
     - name: Install Nginx package
       yum:
@@ -27,16 +54,28 @@
         state: latest
       notify: Nginx reload
 
+    - name: Audit Nginx config files
+      lineinfile:
+        path: '/etc/audit/rules.d/audit.rules'
+        line: '-w /etc/nginx/ -k NGINX_CONFIG'
+      notify: Audit reload rules
+
+    - name: Copy client custom rsyslog config
+      copy:
+        dest: '/etc/rsyslog.d/'
+        src: 'ccustom.conf'
+      notify: Restart rsyslog
+
 - name: "Log provision"
   hosts: Log
   gather_facts: false
   become: true
 
   handlers:
-    - name: systemd-journal-remote
-      service:
-        name: systemd-journal-remote
-        state: started
+    - name: Restart rsyslog
+      systemd:
+        name: rsyslog
+        state: restarted
 
   tasks:
     - name: SELinux disable
@@ -47,16 +86,10 @@
       yum:
         name: epel-release
         state: latest
-
-    - name: Install journald remote service
-      yum:
-        name: systemd-journal-gateway
-        state: present
     
-    - name: Create folder for remote logs
-      file:
-        path: /var/log/journal/remote
-        state: directory
-        owner: systemd-journal-remote
-        group: systemd-journal-remote
+    - name: Copy server custom rsyslog config
+      copy:
+        dest: '/etc/rsyslog.d/'
+        src: 'scustom.conf'
+      notify: Restart rsyslog
 ...
