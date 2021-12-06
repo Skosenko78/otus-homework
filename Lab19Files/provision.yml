@@ -1,0 +1,116 @@
+---
+- name: "PXE server provision"
+  hosts: pxeserver
+  become: true
+  vars:
+    os_version: 8.5.2111
+
+  handlers:
+  - name: Start DHCP
+    systemd:
+      name: 'dhcpd'
+      state: started
+      enabled: yes
+
+  - name: Start TFTP
+    systemd:
+      name: 'tftp'
+      state: started
+      enabled: yes
+
+  - name: Httpd start
+    systemd:
+      name: 'httpd'
+      state: started
+      enabled: yes
+
+  tasks:
+  - name: Install PXE server soft
+    yum:
+      name:
+        - epel-release
+        - dhcp-server
+        - tftp-server
+        - nfs-utils
+        - syslinux-tftpboot.noarch
+        - httpd
+
+  - name: SELinux disable
+    selinux:
+      state: disabled
+
+  - name: Copy DHCP config file
+    copy:
+      src: 'dhcpd.conf'
+      dest: '/etc/dhcp/dhcpd.conf'
+    notify: Start DHCP
+
+  - name: Create TFTP directory
+    file:
+      path: '/var/lib/tftpboot/pxelinux/pxelinux.cfg'
+      state: directory
+
+  - name: Copy tftpboot files
+    copy:
+      src: '/tftpboot/{{ item.name }}'
+      dest: '/var/lib/tftpboot/pxelinux/{{ item.name }}'
+      remote_src: yes
+    loop:
+      - name: 'pxelinux.0'
+      - name: 'libutil.c32'
+      - name: 'menu.c32'
+      - name: 'libmenu.c32'
+      - name: 'ldlinux.c32'
+      - name: 'vesamenu.c32'
+    notify: Start TFTP
+  
+  - name: Copy PXE boot menu file
+    copy:
+      src: 'default'
+      dest: '/var/lib/tftpboot/pxelinux/pxelinux.cfg/default'
+
+  - name: Create folder for boot images
+    file:
+      path: '/var/lib/tftpboot/pxelinux/images/CentOS-8/'
+      state: directory
+
+  - name: Download initrd image file
+    get_url:
+      url: http://mirror.awanti.com/centos/{{ os_version }}/BaseOS/x86_64/os/images/pxeboot/initrd.img
+      dest: /var/lib/tftpboot/pxelinux/images/CentOS-8/initrd.img
+      
+  - name: Download vmlinuz image file
+    get_url:
+      url: http://mirror.awanti.com/centos/{{ os_version }}/BaseOS/x86_64/os/images/pxeboot/vmlinuz
+      dest: /var/lib/tftpboot/pxelinux/images/CentOS-8/vmlinuz
+
+  - name: Create folder for ISO image mounting (NFS)
+    file:
+      path: '/mnt/centos-install'
+      state: directory
+  
+  - name: Download CentOS installation image file
+    get_url:
+      url: http://mirror.reconn.ru/centos/{{ os_version }}/BaseOS/x86_64/os/images/boot.iso
+      dest: /home/vagrant/boot.iso
+  
+  - name: Mount installation image to http folder
+    mount:
+      path: /var/www/html/centos-install
+      src: /home/vagrant/boot.iso
+      fstype: iso9660
+      opts: ro,noauto
+      state: mounted
+    notify: Httpd start
+
+  - name: Create folder for kickstart file
+    file:
+      path: '/var/www/html/cfg'
+      state: directory
+
+  - name: Copy kickstart file
+    copy:
+      src: 'ks.cfg'
+      dest: '/var/www/html/cfg/ks.cfg'
+    notify: Httpd start
+...
