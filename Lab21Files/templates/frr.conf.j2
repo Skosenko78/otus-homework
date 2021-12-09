@@ -1,0 +1,12 @@
+frr version 8.1
+frr defaults traditional
+hostname router1
+log syslog informational
+ip forwarding
+no ipv6 forwarding
+!
+router ospf
+ network {{ ospf_net1 }} area 1
+ network {{ ospf_net2 }} area 1
+exit
+!

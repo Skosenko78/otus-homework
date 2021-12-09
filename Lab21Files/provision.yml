@@ -1,0 +1,78 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: false
+
+  tasks:
+  - name: Install FRR repo
+    yum:
+      name: https://rpm.frrouting.org/repo/frr-stable-repo-1-0.el7.noarch.rpm
+      state: present
+      validate_certs: no
+
+  - name: Install packages
+    yum: name={{ item }} state=latest 
+    with_items:
+      - traceroute
+      - tcpdump
+      - frr
+      - frr-pythontools
+
+  - name: Enable OSPF for FRR service
+    replace:
+      path: /etc/frr/daemons
+      regexp: '^ospfd=no'
+      replace: 'ospfd=yes' 
+   
+- hosts: router1
+  become: yes
+  gather_facts: false
+  vars:
+    ospf_net1: '10.0.0.0/30'
+    ospf_net2: '10.0.10.0/30'
+
+  tasks:
+
+  - name: Copy FRR router config
+    template:
+      src: templates/frr.conf.j2
+      dest: /etc/frr/frr.conf
+  
+  - name: Start FRR service
+    systemd: daemon_reload=yes name=frr state=started enabled=yes
+
+- hosts: router2
+  become: yes
+  gather_facts: false
+  vars:
+    ospf_net1: '10.0.0.0/30'
+    ospf_net2: '10.0.20.0/30'
+
+  tasks:
+
+  - name: Copy FRR router config
+    template:
+      src: templates/frr.conf.j2
+      dest: /etc/frr/frr.conf
+  
+  - name: Start FRR service
+    systemd: daemon_reload=yes name=frr state=started enabled=yes
+
+- hosts: router3
+  become: yes
+  gather_facts: false
+  vars:
+    ospf_net1: '10.0.20.0/30'
+    ospf_net2: '10.0.10.0/30'
+
+  tasks:
+
+  - name: Copy FRR router config
+    template:
+      src: templates/frr.conf.j2
+      dest: /etc/frr/frr.conf
+  
+  - name: Start FRR service
+    systemd: daemon_reload=yes name=frr state=started enabled=yes
+
+...
