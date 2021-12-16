@@ -283,9 +283,11 @@ PING 10.10.10.1 (10.10.10.1) 56(84) bytes of data.
 --- 10.10.10.1 ping statistics ---
 4 packets transmitted, 4 received, 0% packet loss, time 3004ms
 rtt min/avg/max/mdev = 1.299/1.332/1.372/0.029 ms
+```
 
 И убедимся, что сеть туннеля импортирована в таблицу маршрутизации хост-машины. 
 
+```
 ip route
 ... 
 10.10.10.0/24 via 10.10.10.5 dev tun0 
