@@ -1,0 +1,65 @@
+---
+- hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+  - name: SELinux disable
+    selinux: state=disabled
+
+  - name: Install epel repository
+    yum: name=epel-release state=latest
+
+  - name: Install VPN and useful network packages
+    yum: name={{ item }} state=latest
+    with_items:
+      - tcpdump
+      - traceroute
+      - openvpn
+      - iperf3
+
+  - name: Copy secret static key
+    copy: src=static.key dest=/etc/openvpn/static.key mode='600' owner=root group=root
+
+- name: "Server provision"
+  hosts: server
+  become: true
+  gather_facts: false
+
+  handlers:
+  - name: OpenVPN restart
+    systemd: name='openvpn@server' state=restarted enabled=yes
+
+  tasks:
+  - name: Install easy-rsa
+    yum: name=easy-rsa state=latest
+
+  - name: Copy OpenVPN config file
+    copy:
+      src: server.conf
+      dest: /etc/openvpn/server.conf
+    notify: OpenVPN restart
+  
+  - name: Copy RAS OpenVPN config file
+    copy:
+      src: rasserver.conf
+      dest: /etc/openvpn/rasserver.conf
+
+
+- name: "Client provision"
+  hosts: client
+  become: true
+  gather_facts: false
+
+  handlers:
+  - name: OpenVPN restart
+    systemd: name='openvpn@server' state=restarted enabled=yes
+
+  tasks:
+  - name: Copy OpenVPN config file
+    copy:
+      src: client.conf
+      dest: /etc/openvpn/server.conf
+    notify: OpenVPN restart
+
+...
