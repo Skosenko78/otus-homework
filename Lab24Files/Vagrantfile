@@ -1,0 +1,55 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "centos/7"
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.verbose = "vv"
+    ansible.playbook = "provision.yml"
+  end
+
+  config.vm.provider "virtualbox" do |v|
+	  v.memory = 256
+  end
+
+  config.vm.define "inetRouter" do |inetRouter|
+    inetRouter.vm.network "private_network", adapter: 2, virtualbox__intnet: "router-net"
+    inetRouter.vm.network "private_network", adapter: 3, virtualbox__intnet: "router-net"
+    inetRouter.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--nicpromisc3", "allow-all"]
+    end
+    inetRouter.vm.hostname = "inetRouter"
+  end
+
+  config.vm.define "centralRouter" do |centralRouter|
+    centralRouter.vm.network "private_network", adapter: 2, virtualbox__intnet: "router-net"
+    centralRouter.vm.network "private_network", adapter: 3, virtualbox__intnet: "router-net"
+    centralRouter.vm.network "private_network", adapter: 4, virtualbox__intnet: "testLAN"
+    centralRouter.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all", "--nicpromisc3", "allow-all"]
+    end
+    centralRouter.vm.hostname = "centralRouter"
+  end
+
+  config.vm.define "testServer1" do |testServer1|
+    testServer1.vm.network "private_network", virtualbox__intnet: "testLAN"
+    testServer1.vm.hostname = "testServer1"
+  end
+
+  config.vm.define "testClient1" do |testClient1|
+    testClient1.vm.network "private_network", virtualbox__intnet: "testLAN"
+    testClient1.vm.hostname = "testClient1"
+  end
+
+  config.vm.define "testServer2" do |testServer2|
+    testServer2.vm.network "private_network", virtualbox__intnet: "testLAN"
+    testServer2.vm.hostname = "testServer2"
+  end
+
+  config.vm.define "testClient2" do |testClient2|
+    testClient2.vm.network "private_network", virtualbox__intnet: "testLAN"
+    testClient2.vm.hostname = "testClient2"
+  end
+
+end
