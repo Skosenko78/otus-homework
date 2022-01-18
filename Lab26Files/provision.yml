@@ -1,0 +1,69 @@
+---
+- hosts: DynamicWeb
+  become: true
+  gather_facts: false
+
+  handlers:
+
+  - name: nginx start
+    systemd: name=nginx state=started
+
+  tasks:
+  - name: SELinux disable
+    selinux: state=disabled
+
+  - name: Install epel repository
+    yum: name=epel-release state=latest
+
+  - name: Add NodeSource repository
+    shell: "curl -sL https://rpm.nodesource.com/setup_16.x | bash"
+
+  - name: Install NGINX and packages
+    yum: name={{ item }} state=latest
+    with_items:
+      - nginx
+      - php-fpm
+      - uwsgi
+      - uwsgi-plugin-python36
+      - python36-flask
+      - nodejs
+
+  - name: Install Forever
+    npm: name=forever global=yes state=present
+
+  - name: Create folders for sites
+    file: state=directory path=/usr/share/nginx/{{ item }}
+    with_items:
+      - php-fpm
+      - python
+      - js
+
+  - name: Create folder for uwsgi pid
+    file: state=directory path=/run/uwsgi
+
+  - name: Copy Flask app file
+    copy: src=myflaskapp.py dest=/usr/share/nginx/python/myflaskapp.py
+
+  - name: Copy php-fpm file
+    copy: src=test.php dest=/usr/share/nginx/php-fpm/test.php
+
+  - name: Copy node app file
+    copy: src=server.js dest=/usr/share/nginx/js/server.js
+
+  - name: Copy uwsgi.ini file
+    copy: src=uwsgi.ini dest=/etc/
+
+  - name: Start node.js app
+    command: "forever start /usr/share/nginx/js/server.js"
+
+  - name: Start php-fpm app
+    systemd: name=php-fpm state=started
+
+  - name: Start uwsgi app
+    systemd: name=uwsgi state=started
+
+  - name: Copy Nginx config
+    copy: src=dynamic.conf dest=/etc/nginx/conf.d/dynamic.conf
+    notify: nginx start
+
+...
