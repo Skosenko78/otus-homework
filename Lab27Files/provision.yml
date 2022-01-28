@@ -1,0 +1,65 @@
+---
+- name: MySQL Install
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+  - name: Install Percona MySQL repo
+    yum: 
+      name: "https://repo.percona.com/yum/percona-release-latest.noarch.rpm"
+      state: present
+
+  - name: Install Percona MySQL
+    yum: name=Percona-Server-server-57 state=latest
+
+- name: Master configure
+  hosts: master
+  become: true
+  gather_facts: false
+
+  handlers:
+  - name: master mysql start
+    systemd: name=mysqld state=started
+
+  tasks:
+
+  - name: Copy master config files
+    copy: src={{ item }} dest=/etc/my.cnf.d/{{ item }}
+    loop:
+      - '01-base.cnf'
+      - '02-max-connections.cnf'
+      - '03-performance.cnf'
+      - '04-slow-query.cnf'
+      - '05-binlog.cnf'
+    notify: master mysql start
+
+  - name: Copy SSH master private key
+    copy: src='id_rsa' dest='/home/vagrant/.ssh/id_rsa' mode='600' owner=vagrant group=vagrant
+
+- name: Slave configure
+  hosts: slave
+  become: true
+  gather_facts: false
+
+  handlers:
+  - name: slave mysql start
+    systemd: name=mysqld state=started
+
+  tasks:
+
+  - name: Copy slave config files
+    copy: src={{ item }} dest=/etc/my.cnf.d/{{ item }}
+    loop:
+      - '01-base-slave.cnf'
+      - '02-max-connections.cnf'
+      - '03-performance.cnf'
+      - '04-slow-query.cnf'
+      - '05-binlog-slave.cnf'
+    notify: slave mysql start
+
+  - name: Add authorized_keys
+    lineinfile:
+      path: '/home/vagrant/.ssh/authorized_keys'
+      line: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDNnNLneDwfir8b21ep9A5+SMerZIIh1gvdJaL3aWUiIBRuA+PKxH1EkP8pCMnlSMR+p1/5ppCKpdovMbe24exl8qTbcw1ssZy57eBN2VA6IbX6j5EYYmXgh9NTCwF4n+73SIxR6fUDRwYHejuQonTHKA4b3z6HeeBlyW2mkbZ0bs4OxuhmFkUShGLsi1TV42YgfEzmev9jFX+v2qiXjUOiYM8SpF7HGT1n1sqBXFYZFABCnSv/LebgyRkicOkADhMyD7NlpFMqHAyW7rDIdThi0Y+G98awOPTWL8s3FTavZUXiB+mir3qo17Pw7RH2ticEthzQo35tXJNh1WMZuRB vagrant@master'
+...
