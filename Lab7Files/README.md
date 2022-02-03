@@ -1,71 +1,153 @@
 # **Введение**
 
-Цель данной лабораторной работы изучить команды для установки и управления пакетами.
+Цель данной лабораторной работы изучить команды для конфигурирования grub2, научиться изменять порядок и параметры загрузки.
 
-# **Создание RPM с определёнными опциями**
+# **Попасть в систему без пароля несколькими способами.**
 
-После запуска виртуальной машины все необходимые нам для работы пакеты уже установлены, rpm с исходниками скачаны, также скачаны и установлены необходимые зависимости.
+## *1. Параметр rd.break*
 
-Добавим опцию ```--with-openssl=/root/openssl-1.1.1l``` в секцию ```%build``` в файле ```/root/rpmbuild/SPECS/nginx.spec```
+При появлении загрузочного меню нажимаем 'e' и редактируем строчку 'linux', в конце нужно добавить параметр rd.break:
 
-Произведём сборку RPM пакета:
+![alt text](image/rd_break.png "rd.break")
 
-```
-rpmbuild -bb rpmbuild/SPECS/nginx.spec
-...
-Выполняется(%clean): /bin/sh -e /var/tmp/rpm-tmp.yChWIa
-+ umask 022
-+ cd /root/rpmbuild/BUILD
-+ cd nginx-1.14.1
-+ /usr/bin/rm -rf /root/rpmbuild/BUILDROOT/nginx-1.14.1-1.el7_4.ngx.x86_64
-+ exit 0
-```
+И продолжим загрузку нажав Ctrl+x.
 
-И проверим, что пакеты создались:
+![alt text](image/switch_root.png "Switch root")
+
+Для смены пароля нам необходимо перемонтировать нашу файловую систему в режиме rw:
 
 ```
-[root@bootdemo ~]# ll rpmbuild/RPMS/x86_64/
-total 4584
--rw-r--r--. 1 root root 2158832 сен  2 13:18 nginx-1.14.1-1.el7_4.ngx.x86_64.rpm
--rw-r--r--. 1 root root 2528436 сен  2 13:18 nginx-debuginfo-1.14.1-1.el7_4.ngx.x86_64.rpm
+mount -o remount,rw /sysroot
 ```
 
-Установим пакет и проверим запуск сервиса:
+Сменить корневую файловую систему и сменить пароль:
 
 ```
-[root@bootdemo ~]# yum localinstall -y rpmbuild/RPMS/x86_64/nginx-1.14.1-1.el7_4.ngx.x86_64.rpm
+chroot /sysroot
+passwd
+```
 
-[root@bootdemo ~]# systemctl start nginx
-[root@bootdemo ~]# systemctl status nginx
-● nginx.service - nginx - high performance web server
-   Loaded: loaded (/usr/lib/systemd/system/nginx.service; disabled; vendor preset: disabled)
-   Active: active (running) since Чт 2021-09-02 13:25:05 UTC; 3s ago
-     Docs: http://nginx.org/en/docs/
-  Process: 19548 ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx.conf (code=exited, status=0/SUCCESS)
- Main PID: 19549 (nginx)
-   CGroup: /system.slice/nginx.service
-           ├─19549 nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf
-           └─19550 nginx: worker process
+Для восстановления меток selinux нужно сделать autorelabel, создадим файл .autorelabel в корне файловой системы и перегрузимся:
+
+```
+touch /.autorelabel
+exit
+```
+После восстановления меток система перегрузилась ещё раз и мы смогли залогиниться с новым паролем.
+
+## *2. Параметр init=/sysroot/bin/sh*
+
+В данном случае всё тоже, что и в первом варианте, кроме того, что параметр загрузки мы указываем не rd.break, а init=/sysroot/bin/sh после root=/dev/mapper/centos7-root ro. Если ro заменить на rw, то файловая система сразу смонтируется в режиме rw.
+
+# **Установить систему с LVM, после чего переименовать VG**
+
+Установим систему на виртуальную машину. VG называется centos:
+
+![alt text](image/lvm.png "Before rename lvm")
+
+Переименуем VG и перегрузимся:
+
+![alt text](image/lvmrename.png "Rename lvm")
+
+![alt text](image/emergency.png "After rename lvm")
+
+Система не смогла загрузиться, т.к. не может найти VG с именем centos. Изменим параметры загрузки в меню и попробуем исправить ситуацию:
+
+![alt text](image/menu.png "GRUB menu")
+
+Изменили centos на centos7, система загрузилась.
+
+Изменим имя VG в файле fstab и файле /etc/default/grub, в котором хранятся переменные для формирования grub.cfg, в частности переменную GRUB_CMDLINE_LINUX:
+
+![alt text](image/grub.png "File grub")
+
+Перегенерируем конфиг grub и перегрузим систему:
+
+```
+grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+
+В этот раз система загрузилась без ручной правки параметров загрузки.
+
+
+# **Добавить модуль в initrd**
+
+Создадим каталог для нашего модуля:
+
+```
+mkdir /usr/lib/dracut/modules.d/01test
+```
+
+Cам файл модуля module-setup.sh:
+
+```
+cat >module-setup.sh<<EOF
+
+#------------------------------------------------
+#!/bin/bash
+ 
+check() {
+     return 0 
+} 
+depends() {
+     return 0 
+} 
+install() {
+     inst_hook cleanup 00 "${moddir}/test.sh" 
+} 
+#------------------------------------------------
+EOF
 
 ```
 
-
-# **Создание репозитория и размещение там RPM**
-
-Репозиторий создадим на виртуальном сервере на платформе Websa.
-Установим необходимые для работы пакеты:
+И файл test.sh, который нужно выполнить в модуле:
 
 ```
-sudo yum install -y nginx createrepo
+vi test.sh
+
+
+#------------------------------------------------
+#!/bin/bash 
+exec 0<>/dev/console 1<>/dev/console 2<>/dev/console 
+cat <<'msgend' 
+ ___________________ 
+< I'm dracut module > 
+ ------------------- 
+    \
+     \ 
+    .--. 
+       |o_o | 
+       |:_/ | 
+      //   \ \ 
+     (|     | ) 
+    /'\_   _/`\ 
+    \___)=(___/ 
+msgend 
+sleep 10 
+echo " continuing....
+#------------------------------------------------
 ```
 
-Создадим каталог для репозитория:
+Добавим права запуска обоим файлам:
 
 ```
-[adminroot@wvds132865] sudo mkdir /usr/share/nginx/html/repo
+chmod +x test.sh module-setup.sh
 ```
 
+Создадим файл initramfs:
 
-### **Заключение**
+```
+mkinitrd -f -v /boot/initramfs-$(uname -r).img $(uname -r)
+```
 
-В процессе выполнения лабораторной работы были получены навыки работы с файловой системой zfs. Были созданы тома, проверены функции импорта пулов и восстановления из snapshot'ов.
+И проверим наличие в нём наших изменений:
+
+```
+[root@localhost 01test]# lsinitrd -m /boot/initramfs-$(uname -r).img | grep test
+test
+[root@localhost 01test]#
+```
+
+При очередной загрузке можно увидеть выполнение нашего модуля:
+
+![alt text](image/dracut_module.png "Dracut Module")
